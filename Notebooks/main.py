@@ -16,6 +16,8 @@ from src.defense import defend_updates
 
 from collections import OrderedDict, Counter
 
+from random import randint
+
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -144,6 +146,14 @@ num_classes = 10 # MNIST
 #array_range=np.arange(obj['frac_clients']*obj['num_users'])
 #np.random.shuffle(array_range)
 
+seeds = []
+for i in range(obj['num_users']//2):
+    rand_int = randint(1, 1)
+    seeds.append(rand_int * -1)
+    seeds.append(rand_int)
+    print(str(i) + " random seed is " + str(rand_int))
+print(seeds)
+
 for epoch in range(obj['global_epochs']):
 
 	################################# Client Sampling & Local Training #################################
@@ -157,8 +167,8 @@ for epoch in range(obj['global_epochs']):
 	
 	local_updates, local_losses, local_sizes, control_updates = [], [], [], []
 
-	for idx in idxs_users: # Training the local models
-
+	for i, idx in enumerate(idxs_users): # Training the local models
+		print("\nUser " + str(i) + " has seed " + str(seeds[i]))
 		if obj['is_attack'] == 1 and obj['attack_type'] == 'label_flip' and idx in idxs_byz_users:
 			local_model = LocalUpdate(train_dataset, user_groups[idx], obj['device'], 
 					obj['train_test_split'], obj['train_batch_size'], obj['test_batch_size'], obj['attack_type'], num_classes)
@@ -171,6 +181,14 @@ for epoch in range(obj['global_epochs']):
 												epoch+1, idx+1, obj['batch_print_frequency'])
 
 		c[idx] = c_new # Updating the control variates in the main list for that client
+
+		torch.manual_seed(abs(seeds[i]))
+		for key_modifying in w.keys():
+			random_vals = torch.rand(w[key_modifying].shape)
+			if seeds[i] < 0:
+				w[key_modifying] = w[key_modifying] - random_vals
+			else:
+				w[key_modifying] = w[key_modifying] + random_vals
 		
 		local_updates.append(copy.deepcopy(w))
 		control_updates.append(c_update)
