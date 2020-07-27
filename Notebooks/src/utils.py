@@ -38,7 +38,7 @@ def global_aggregate(global_optimizer, global_weights, local_updates, local_size
 				if global_optimizer == 'scaffold':
 					w[key] += torch.mul(torch.div(local_updates[i][key], len(local_sizes)), global_lr)
 				else:
-					w[key] += torch.mul(local_updates[i][key], local_sizes[i]/total_size)
+					w[key] += torch.div(local_updates[i][key], len(local_sizes))
 			w[key]=(1-alpha)*temp_copy[key]+alpha*w[key]
 		return w, v, m
 	
